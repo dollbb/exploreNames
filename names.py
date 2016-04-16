@@ -5,13 +5,23 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
+from fuzzywuzzy import fuzz
+from fuzzywuzzy import process
+
 sns.set_style("whitegrid")
 
 con = sqlite3.connect("database.sqlite")
 cursor = con.cursor()
 cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
 
+df = pd.read_sql_query("SELECT * FROM NationalNames", con)
+
+
 def namePlt(name=None):
+    '''
+    Plot name usage over time by gender
+    name = name string
+    '''
     if name == None:
         print "gotta enter a name"
         return
@@ -60,3 +70,28 @@ def namePlt(name=None):
     
 
     
+
+
+
+def nameVars(dat, name=None, numMatch=25):
+    '''
+    Get variants on a name by Levenshtein distance.
+    dat = name data set
+    name = name string
+    numMatch = number of variants to return
+    '''
+    name = name[0].upper() + name[1:len(name)].lower()
+    nsum = dat.groupby(['Name','Gender'])['Count'].sum()
+    
+    nsum = pd.DataFrame(nsum)
+    nsum.reset_index(inplace=True)
+
+    names = dat.Name.unique()
+
+    ndf = process.extract(name, names, limit = numMatch)
+    ndf = pd.DataFrame(data = ndf, columns = ['Name', 'sim'])
+
+    ndf = pd.merge(ndf, nsum, on = 'Name', how= 'inner')
+
+    return ndf 
+
