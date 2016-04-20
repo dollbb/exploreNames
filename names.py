@@ -69,8 +69,6 @@ def namePlt(name=None):
     return nameDF
     
 
-    
-
 
 
 def nameVars(dat, name=None, numMatch=25):
@@ -80,18 +78,22 @@ def nameVars(dat, name=None, numMatch=25):
     name = name string
     numMatch = number of variants to return
     '''
-    name = name[0].upper() + name[1:len(name)].lower()
+    name = name[0].upper() + name[1:len(name)].lower()    
+    names = dat.Name.unique()
+    ndf = process.extract(name, names, limit = numMatch)
+    ndf = pd.DataFrame(data = ndf, columns = ['Name', 'Sim'])
+    
     nsum = dat.groupby(['Name','Gender'])['Count'].sum()
     
-    nsum = pd.DataFrame(nsum)
-    nsum.reset_index(inplace=True)
+    dat = df.sort_values(['Name', 'Count'], ascending = [1, 0])
+    dat = dat.groupby(['Name','Gender']).first()
+    dat.drop('Id', axis=1, inplace=True)
+    dat.columns = ['max_year', 'max_year_count']
+    
+    dat['total_count'] = nsum
+    dat.reset_index(inplace=True)
 
-    names = dat.Name.unique()
-
-    ndf = process.extract(name, names, limit = numMatch)
-    ndf = pd.DataFrame(data = ndf, columns = ['Name', 'sim'])
-
-    ndf = pd.merge(ndf, nsum, on = 'Name', how= 'inner')
+    ndf = pd.merge(ndf, dat, on = 'Name', how= 'inner')
 
     return ndf 
 
